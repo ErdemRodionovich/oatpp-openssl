@@ -23,6 +23,21 @@
  ***************************************************************************/
 
 #include "CertificateChainFile.hpp"
+#include <openssl/err.h>
+
+namespace {
+
+  std::string opensslError(){
+    std::string result;
+    unsigned long code = 0;
+    while((code = ERR_get_error()) != 0){
+      result.append(ERR_error_string(code, nullptr));
+      result.append(", ");
+    }
+    return result;
+  }
+
+}
 
 namespace oatpp { namespace openssl { namespace configurer {
 
@@ -32,8 +47,9 @@ CertificateChainFile::CertificateChainFile(const oatpp::String &filename)
 
 void CertificateChainFile::configure(SSL_CTX *ctx) {
   if (SSL_CTX_use_certificate_chain_file(ctx, m_filename->c_str()) <= 0) {
-    throw std::runtime_error("[oatpp::openssl::configurer::CertificateChainFile::configure()]: Error. "
-                             "Call to 'SSL_CTX_use_certificate_chain_file' failed.");
+    throw std::runtime_error(std::string{"[oatpp::openssl::configurer::CertificateChainFile::configure()]: Error. "
+                             "Call to 'SSL_CTX_use_certificate_chain_file' failed. Filename: "} + ((m_filename)? *m_filename : "")
+                             + ", error: " + opensslError());
   }
 }
 
